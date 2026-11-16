@@ -62,15 +62,20 @@ header{flex-wrap:wrap}#bots{display:flex;flex-wrap:wrap;gap:6px;flex:1}.bot{font
 .tile.by{outline:3px solid var(--bc);outline-offset:1px}
 #log{padding:0 14px 6px;font-size:12.5px;line-height:1.3;max-height:70px;overflow:hidden}#log div:first-child{font-weight:700}
 body,.tile,button{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#mp{white-space:pre-line}
+.tile{width:calc(29px*var(--k,1));height:calc(40px*var(--k,1));font-size:calc(19px*var(--k,1))}.tile::after{font-size:calc(8px*var(--k,1))}.tile.sm{width:calc(25px*var(--k,1));height:calc(35px*var(--k,1));font-size:calc(16px*var(--k,1))}.gap{height:calc(40px*var(--k,1))}.add{width:calc(26px*var(--k,1));height:calc(35px*var(--k,1))}
+button.act{height:42px}.bar{margin-top:8px}#status{min-height:22px;padding-bottom:4px}header{padding:8px 12px 4px}#rack{padding:8px 8px 10px;gap:5px}footer{padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px))}main{padding:2px 10px 10px;gap:8px}
+header{display:grid;grid-template-columns:1fr auto;align-items:start;gap:6px}#bots{display:grid;grid-template-columns:1fr 1fr;gap:5px;min-width:0}.bot{display:block;min-width:0;font-size:11.5px;padding:3px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ctl{display:grid;grid-template-columns:auto auto;gap:5px;align-items:center}#ctl .chip{justify-content:center;padding:4px 9px;font-size:12px}#hint,#snd{justify-self:center}
 </style></head><body>
 <div id="app">
-<header><div id="bots"></div><div class="chip">Bolsa <b id="pile"></b></div><div class="chip" id="tm">⏱ <b id="sec"></b></div><button id="hint" aria-label="Pista" title="Pista">i</button><button id="snd" aria-label="Sonido"></button></header><div id="tb"><i></i></div>
+<header><div id="bots"></div><div id="ctl"><div class="chip">Bolsa <b id="pile"></b></div><div class="chip" id="tm">⏱ <b id="sec"></b></div><button id="hint" aria-label="Pista" title="Pista">i</button><button id="snd" aria-label="Sonido"></button></div></header><div id="tb"><i></i></div>
 <div id="status"></div>
 <main id="board"></main>
 <footer><div id="rack"></div>
 <div class="bar"><button class="act" id="undo">Deshacer</button><button class="act" id="sort">Ordenar</button><button class="act main" id="go">Robar ficha</button></div></footer>
 </div>
-<div id="modal"><div><section id="logo"></section><h2 id="mt"></h2><p id="mp"></p><section><span class="seg" id="sn"></span><span class="seg" id="st"></span></section><button class="act main" style="width:100%" id="again">Jugar</button></div></div>
+<div id="modal"><div><section id="logo"></section><h2 id="mt"></h2><p id="mp"></p><section><span class="seg" id="sn"></span><span class="seg" id="st"></span><span class="seg" id="sm"></span></section><button class="act main" style="width:100%" id="again">Jugar</button></div></div>
 <script>
 const $=s=>document.querySelector(s);
 let G,T={},uid=0,sid=0,DL=0,W={me:0,pc:0};
@@ -184,7 +189,8 @@ function buzz(n){
   const l=document.createElement("label"),i=document.createElement("input");i.type="checkbox";i.setAttribute("switch","");l.style.cssText="position:fixed;left:-99px;top:-99px;opacity:0";l.append(i);document.body.append(l);
   l.click();if(n>1)setTimeout(()=>l.click(),110);setTimeout(()=>l.remove(),400)}catch(e){}
 }
-const COL=["#d9a7ff","#7ec8ff","#ffb36b"];let DRG=0;
+const COL=["#d9a7ff","#7ec8ff","#ffb36b"];let DRG=0;let S={played:0,won:0,pts:0,streak:0,chal:0};try{S={...S,...JSON.parse(localStorage.getItem("rk2"))}}catch(e){}
+function statLine(){return S.played?"Ganadas "+S.won+" de "+S.played+" · Puntos "+S.pts+(S.chal?" · Retos "+S.chal:""):""}
 function celebrate(){
  const c=document.createElement("canvas");c.style.cssText="position:fixed;inset:0;width:100%;height:100%;z-index:100;pointer-events:none";document.body.append(c);
  const x=c.getContext("2d"),W=c.width=innerWidth,H=c.height=innerHeight,P=[],cols=["#d3392e","#1c5ec2","#e08419","#f3c552","#7fe3ac","#ffffff","#ff8fb8"];
@@ -201,19 +207,36 @@ function celebrate(){
 }
 async function peek(i){const els=[...document.querySelectorAll("#board .set")].sort(()=>Math.random()-.5).slice(0,1+(Math.random()*3|0));for(const e of els){e.style.boxShadow="0 0 0 3px "+COL[i];e.scrollIntoView({block:"nearest",behavior:"smooth"});await wait(550);e.style.boxShadow="";await wait(150)}}
 const NAMES=["Doña Fichas","Paco el Comodín","Sr. Escalera","Maru Trampas","Don Joker","La Abuela Ninja","Pepe Piernas","Tía Rummi","Capitán Bolsa","Manolo Manitas","Lola Mento","Fermín Fichas","Rosa Melano","Bruja Piruja","Chema Chaquetas","Nuria Nietas"];
-const OPT={n:3,t:60},wait=ms=>new Promise(r=>setTimeout(r,ms));
+const OPT={n:3,t:60,m:0,x:40},wait=ms=>new Promise(r=>setTimeout(r,ms));
 function newGame(){snd("tap");
  uid=0;T={};let p=[];
  for(let k=0;k<2;k++)for(let c=0;c<4;c++)for(let n=1;n<=13;n++)p.push(mk(c,n));
  p.push(mk(4,0),mk(4,0));shuffle(p);const nm=shuffle(NAMES.slice()),av=shuffle(["👵","🧔","👩‍🦰","🧑‍🎤","👨‍🍳","🕵️","🧙","👴","💃","🤠"]);
  G={pile:p,rack:p.splice(0,14),bots:Array.from({length:OPT.n},(_,i)=>({name:nm[i],av:av[i],rack:p.splice(0,14),melded:0})),sets:[],melded:{me:0},sel:new Set(),turn:0,fresh:new Set(),passes:0,sort:"color",over:0,dl:0,brk:new Set(),mode:-1,mark:{},log:[]};
- sortRack();$("#modal").classList.remove("on");startTurn("Tu turno. Mantén pulsada una ficha para coger todo su grupo.");
+ sortRack();$("#modal").classList.remove("on");startTurn((OPT.m==1?"Reto "+S.streak+"/3. ":OPT.m==2?"Reto: gana con "+OPT.x+"+ puntos. ":"")+"Tu turno. Mantén pulsada una ficha para coger todo su grupo.");
 }
 function startTurn(m){G.dl=OPT.t?Date.now()+OPT.t*1000:0;snap();render(m||"Tu turno.")}
 const snap=()=>{G.snap={sets:G.sets.map(s=>s.tiles.map(t=>t.id)),rack:G.rack.map(t=>t.id)}};
 function restore(){G.sets=G.snap.sets.map(a=>({id:sid++,tiles:a.map(i=>T[i])}));G.rack=G.snap.rack.map(i=>T[i]);G.sel.clear()}
 function sortRack(){const k=t=>G.sort=="color"?(t.n?t.c*20+t.n:99):(t.n?t.n*5+t.c:99);G.rack.sort((a,b)=>k(a)-k(b))}
 function pick(id){if(G.over||(G.turn&&!G.rack.includes(T[id])))return;G.fresh.clear();snd("tap");G.sel.has(id)?G.sel.delete(id):G.sel.add(id);render()}
+function fit(){
+ const b=$("#board"),r=$("#rack"),nb=G.sets.reduce((s,x)=>s+x.tiles.length+1.5,0)+(G.sel.size&&!G.turn?3:0),
+  ab=(b.clientWidth-20)*(b.clientHeight-10),kb=nb?Math.max(.66,Math.min(1,Math.sqrt(ab/(nb*1300)))):1,
+  ar=(r.clientWidth-16)*(innerHeight*.34-20),kr=G.rack.length?Math.max(.72,Math.min(1,Math.sqrt(ar/(G.rack.length*1600)))):1;
+ document.body.style.setProperty("--k",kb.toFixed(2));r.style.setProperty("--k",kr.toFixed(2));
+}
+function pull(){
+ G.sets=G.sets.flatMap(s=>{
+  if(!s.tiles.some(t=>G.sel.has(t.id)))return[s];
+  const g=new Set(s.tiles.filter(t=>t.n).map(t=>t.n)).size==1,parts=[];let cur=[];
+  s.tiles.forEach(t=>{if(G.sel.has(t.id)){if(cur.length)parts.push(cur);cur=[]}else cur.push(t)});
+  if(cur.length)parts.push(cur);
+  if(g)parts.splice(0,parts.length,parts.flat());
+  s.tiles=parts[0]||[];
+  return[s,...parts.slice(1).map(p=>({id:sid++,tiles:p}))];
+ }).filter(s=>s.tiles.length);
+}
 function splitDup(tiles){
  if(tiles.some(t=>!t.n)||new Set(tiles.map(t=>t.c)).size!=1)return null;
  const s=tiles.slice().sort((a,b)=>a.n-b.n),d=s.find((t,i)=>i&&t.n==s[i-1].n);
@@ -234,7 +257,9 @@ function moveSel(target){
   s.tiles=parts[0]||[];
   return[s,...parts.slice(1).map(p=>({id:sid++,tiles:p}))];
  });
- if(target==null)G.sets.push({id:sid++,tiles:arrange(ts)});else{const sp=splitDup([...tset.tiles,...ts]);if(sp){tset.tiles=sp[0];G.sets.splice(G.sets.indexOf(tset)+1,0,{id:sid++,tiles:sp[1]})}else tset.tiles=arrange([...tset.tiles,...ts])}
+ if(target==null)G.sets.push({id:sid++,tiles:arrange(ts)});else{const rs=tset.tiles,run=rs.length>1&&rs.every(t=>t.n&&t.c==rs[0].c)&&new Set(rs.map(t=>t.n)).size==rs.length,n0=ts[0].n,e=run&&n0&&ts.every(t=>t.n==n0&&t.c!=rs[0].c)&&rs.find(t=>t.n==(n0==Math.max(...rs.map(x=>x.n))||n0==Math.min(...rs.map(x=>x.n))?n0:-1));
+  if(e){tset.tiles=rs.filter(t=>t!==e);G.sets.splice(G.sets.indexOf(tset)+1,0,{id:sid++,tiles:[e,...ts]})}
+  else{const sp=splitDup([...tset.tiles,...ts]);if(sp){tset.tiles=sp[0];G.sets.splice(G.sets.indexOf(tset)+1,0,{id:sid++,tiles:sp[1]})}else tset.tiles=arrange([...tset.tiles,...ts])}}
  snd("place");G.sets=G.sets.filter(s=>s.tiles.length);G.sel.clear();render();if(!G.turn&&!G.over&&!G.rack.length&&G.sets.every(s=>check(s.tiles).ok))endTurn();
 }
 const played=()=>G.snap.rack.length-G.rack.length;
@@ -293,9 +318,12 @@ async function botTurn(){
 function finish(w){
  G.over=1;const pts=a=>a.reduce((s,t)=>s+(t.n||30),0),L=[G.rack,...G.bots.map(b=>b.rack)];
  if(w<0){const m=Math.min(...L.map(pts));w=L.findIndex(r=>pts(r)==m)}
- if(w==0)W.me++;
+ const rp=w==0?L.slice(1).reduce((s,r)=>s+pts(r),0):-pts(G.rack);S.played++;if(w==0)S.won++;S.pts+=rp;let ch="";
+ if(OPT.m==1){if(w==0){S.streak++;if(S.streak>=3){S.chal++;S.streak=0;ch="\n🏆 ¡Reto superado: 3 victorias seguidas!"}else ch="\nRacha: "+S.streak+" de 3."}else{S.streak=0;ch="\nRacha rota: vuelves a 0 de 3."}}
+ if(OPT.m==2){if(w==0&&rp>=OPT.x){S.chal++;ch="\n🏆 ¡Reto superado con "+rp+" puntos!"}else ch=w==0?"\nGanaste, pero el reto pide "+OPT.x+" puntos o más.":"\nReto no superado."}
+ try{localStorage.setItem("rk2",JSON.stringify(S))}catch(e){}
  try{localStorage.setItem("rk",JSON.stringify(W))}catch(e){}
- snd(w==0?"win":"lose");if(w==0)celebrate();render();modal(w==0?"¡Ganaste!":"Gana "+G.bots[w-1].name,"Partidas ganadas: "+W.me+". ¿Otra?");
+ snd(w==0?"win":"lose");if(w==0)celebrate();render();modal(w==0?"¡Ganaste!":"Gana "+G.bots[w-1].name,(rp>0?"+":"")+rp+" puntos esta partida."+ch+"\n"+statLine());
 }
 function modal(t,p){$("#mt").textContent=t;$("#mp").textContent=p;$("#modal").classList.add("on")}
 function seg(id,vals,key,fmt){const s=$(id);s.innerHTML="";vals.forEach(v=>{const b=document.createElement("button");b.textContent=fmt(v);b.className=OPT[key]==v?"on":"";b.onclick=()=>{OPT[key]=v;seg(id,vals,key,fmt)};s.append(b)})}
@@ -313,9 +341,9 @@ function drag(e,t,d){
   g.remove();d.style.opacity=1;if(G.over)return;if(!G.sel.has(t.id))G.sel=new Set([t.id]);
   const el=document.elementFromPoint(ev.clientX,ev.clientY),s=el&&el.closest(".set");
   if(s&&!G.turn)moveSel(+s.dataset.k);
-  else if(el&&el.closest("#rack")){const bad=[...G.sel].some(i=>!G.rack.includes(T[i])),tt=el.closest(".tile"),tg=tt&&T[tt.dataset.id];
-  let note=null;const gp=el.closest(".gap"),tg2=gp?T[gp.dataset.b]:tg;if(!bad&&!(tg2&&G.sel.has(tg2.id)))note=rackDrop(tg2,tt&&ev.clientX<tt.getBoundingClientRect().left+tt.offsetWidth/2,!!gp);
-  G.sel.clear();render(bad?"No puedes devolver fichas de la mesa a tu atril.":note,bad)}
+  else if(el&&el.closest("#rack")){const bad=[...G.sel].some(i=>!G.rack.includes(T[i])&&(G.turn||!G.snap.rack.includes(+i))),tt=el.closest(".tile"),tg=tt&&T[tt.dataset.id];
+  let note=null;if(!bad){const bt=[...G.sel].map(i=>T[i]).filter(t=>!G.rack.includes(t));if(bt.length){pull();G.rack.push(...bt)}}const gp=el.closest(".gap"),tg2=gp?T[gp.dataset.b]:tg;if(!bad&&!(tg2&&G.sel.has(tg2.id)))note=rackDrop(tg2,tt&&ev.clientX<tt.getBoundingClientRect().left+tt.offsetWidth/2,!!gp);
+  G.sel.clear();render(bad?"Solo puedes devolver a tu mano fichas que has sacado en este turno.":note,bad)}
   else if(el&&el.closest("main")&&!G.turn)moveSel(null);
   else{G.sel.clear();render()}
  };
@@ -337,13 +365,13 @@ function render(m,err){
   if(G.sel.size&&!G.turn){const a=document.createElement("button");a.className="add";a.textContent="+";a.setAttribute("aria-label","Añadir a este grupo");a.onclick=()=>moveSel(k);e.append(a)}
   b.append(e);
  });
- if(G.sel.size&&!G.turn){const n=document.createElement("button");n.className="newset";n.textContent="+ Nuevo grupo";n.onclick=()=>moveSel(null);b.append(n)}
+ if(G.sel.size&&!G.turn){const n=document.createElement("button");n.className="newset";n.textContent="+ Nuevo grupo";n.onclick=()=>moveSel(null);b.append(n);const bk=[...G.sel].map(i=>T[i]).filter(t=>!G.rack.includes(t));if(bk.length&&bk.every(t=>G.snap.rack.includes(t.id))){const r2=document.createElement("button");r2.className="newset";r2.textContent="↩ A mi mano";r2.onclick=()=>{pull();G.rack.push(...bk);G.sel.clear();render()};b.append(r2)}}
  else if(!G.sets.length){const e=document.createElement("div");e.className="empty";e.textContent="La mesa está vacía. Arrastra 3 fichas o más aquí para crear un grupo.";b.append(e)}
  const r=$("#rack");if(!DRG)r.innerHTML="";(DRG?[]:G.rack).forEach((t,i)=>{if(i&&G.brk.has(t.id)){const g=document.createElement("i");g.className="gap";g.dataset.b=t.id;r.append(g)}r.append(tileEl(t))});
  $("#bots").innerHTML=G.bots.map((x,i)=>'<div class="chip bot'+(G.turn==i+1?" on":"")+'" data-i="'+i+'" style="border:2px solid '+COL[i]+'">'+x.av+' '+x.name+' <b>'+x.rack.length+'</b></div>').join("");
  $("#pile").textContent=G.pile.length;
  const my=!G.turn&&!G.over;
- $("#go").textContent=played()>0?"Terminar turno":"Robar ficha";$("#go").disabled=!my;$("#undo").disabled=!my;$("#hint").disabled=!my;
+ $("#go").textContent=played()>0?"Terminar turno":"Robar ficha";$("#go").disabled=!my;$("#undo").disabled=!my;$("#hint").disabled=!my;fit();
 }
 setInterval(()=>{
  const on=G&&!G.over&&G.dl;
@@ -402,11 +430,13 @@ function hint(){
  render("Pista: puedes colocar "+used.length+" ficha"+(used.length>1?"s":"")+" (resaltadas)"+(m?(re?", reorganizando la mesa":""):" y abrir con "+r.s+" puntos")+".");
 }
 $("#hint").onclick=hint;
+addEventListener("resize",()=>{if(G)fit()});
 addEventListener("contextmenu",e=>e.preventDefault());
 $("#again").onclick=newGame;
 seg("#sn",[1,2,3],"n",v=>v+(v>1?" rivales":" rival"));
 seg("#st",[30,60,90,0],"t",v=>v?v+" s":"Sin límite");
+seg("#sm",[0,1,2],"m",v=>["Partida libre","Reto: 3 seguidas ("+S.streak+"/3)","Reto: ganar con "+OPT.x+"+ puntos"][v]);
 $("#logo").innerHTML=["RUMMI","KUB☺"].map((w,r)=>'<span class="lr">'+[...w].map((ch,i)=>'<i class="tile '+(ch=="☺"?"jk":"c"+(i+r*2)%4)+'" style="animation-delay:'+(i*.15+r*.4)+'s">'+ch+'</i>').join("")+'</span>').join("");
-modal("¡A jugar!","Elige rivales y tiempo por turno.");
+modal("¡A jugar!",statLine()||"Elige rivales y tiempo por turno.");
 if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 </script></body></html>
