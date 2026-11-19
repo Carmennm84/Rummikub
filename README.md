@@ -14,6 +14,13 @@ Juego de Rummikub contra 1 a 3 computadoras, sin anuncios. Funciona en el navega
 2. Pulsa **Compartir → Añadir a pantalla de inicio**.
 3. Saldrá con el icono de las fichas 5-6-7. Una vez cargado, también funciona sin conexión.
 
+## Jugar online con un amigo
+1. Los dos abrís la app (necesita conexión).
+2. Uno pulsa **🌐 Online con un amigo**, escribe su nombre y deja el código vacío. Le saldrá un código de 4 caracteres.
+3. El otro pulsa lo mismo, escribe su nombre y pone ese código.
+4. Empieza la partida. Con 2 o 3 rivales en los ajustes se suman computadoras (1 rival = solo tu amigo).
+Solo la persona que creó la partida puede empezar otra.
+
 ## Compartirlo
 Pasa el enlace de GitHub Pages. Cada persona lo instala igual y su marcador de victorias se guarda en su propio móvil.
 
